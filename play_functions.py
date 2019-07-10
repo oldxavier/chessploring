@@ -8,9 +8,7 @@ def flip_to_move(to_move):
     else:
         return "W"
 
-def move(board, move):
-    move_from = (move[0], move[1])
-    move_to = (move[2], move[3])
+def move(board, move_from, move_to):
     board[move_to] = board[move_from]
     board[move_from].type = None
     board[move_from].colour = None

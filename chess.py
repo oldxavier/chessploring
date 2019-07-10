@@ -32,7 +32,9 @@ def play(board, to_move):
             play(board, to_move)
             break
         try:
-            new_board = play_functions.move(board, this_move)
+            move_from = (this_move[0], this_move[1])
+            move_to = (this_move[2], this_move[3])
+            new_board = play_functions.move(board, move_from, move_to)
             if possible_moves.is_check(new_board, to_move):
                 if possible_moves.possible_moves(board, to_move) == None:
                     to_move = play_functions.flip_to_move(to_move)
