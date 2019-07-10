@@ -1,1 +1,0 @@
-# Returns a boolean whether or not the current board position is in check for the player whose turn it is

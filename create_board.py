@@ -4,12 +4,12 @@ class Piece:
         self.colour = this_colour
 
 class Board():
-    def __init__(self, pieces, castle):
+    def __init__(self, pieces, castle, en_passant):
         self.pieces = pieces
         self.castle = castle
+        self.en_passant = en_passant
 
 def initial_board():
-    # TODO: populate initial board with 64 pieces
     pieces = {}
     for i in range(1,9):
         for j in range(1,9):
@@ -40,7 +40,6 @@ def initial_board():
             pieces[piece].type = "King"
     # Create board
     castle = [True, True, True, True]
-    initial_board = Board(pieces, castle)
+    en_passant = True
+    initial_board = Board(pieces, castle, en_passant)
     return initial_board
-
-initial_board()
