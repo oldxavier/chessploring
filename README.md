@@ -1,2 +1,2 @@
 # chessploring
-A self-study attempt to beat myself
+A self-study attempt to beat myself in chess.
