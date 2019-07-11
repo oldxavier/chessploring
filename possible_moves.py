@@ -6,34 +6,60 @@
 
 # Use is_check.py to check whether move is legal
 
+import copy
+
+
 def flip_to_move(to_move):
     if to_move == "W":
         return "B"
     else:
         return "W"
 
-def move(board, move_from, move_to):
-    board[move_to] = board[move_from]
-    board[move_from].type = None
-    board[move_from].colour = None
-    return board
+def check_this_move(board, move_from, move_to):
+    promotion = False
+    if (move_to[0] == 8 or move_to[0] == 1) and board.pieces[move_from].type == "Pawn":
+        board.pieces[move_from].type = "Queen"
+        promotion = True
+    # Whose turn it is
+    to_move = board.pieces[move_from].colour
+    # Temp variables to reverse move
+    temp_type = board.pieces[move_to].type
+    temp_colour = board.pieces[move_to].colour
+    # Make move
+    board.pieces[move_to].type = board.pieces[move_from].type
+    board.pieces[move_to].colour = board.pieces[move_from].colour
+    board.pieces[move_from].type = None
+    board.pieces[move_from].colour = None
+    # Check or not
+    check = is_check(board, to_move)
+    # Reverse move
+    if promotion:
+        board.pieces[move_from].type = "Pawn"
+    else:
+        board.pieces[move_from].type = board.pieces[move_to].type
+    board.pieces[move_from].colour = board.pieces[move_to].colour
+    board.pieces[move_to].type = temp_type
+    board.pieces[move_to].colour = temp_colour
+    # Return boolean
+    return check
+
 
 def possible_moves(board, to_move):
     moves = []
-    for piece in board:
-        if board[piece].type == None:
+    for piece in board.pieces:
+        if board.pieces[piece].colour != to_move:
             continue
-        if board[piece].type == "Pawn":
+        if board.pieces[piece].type == "Pawn":
             moves.extend(possible_pawn_moves(board, piece, to_move))
-        elif board[piece].type == "Rook":
+        elif board.pieces[piece].type == "Rook":
             moves.extend(possible_rook_moves(board, piece, to_move))
-        # elif board[piece].type == "Knight":
+        # elif board.pieces[piece].type == "Knight":
         #     #moves.extend(possible_knight_moves(board, piece, to_move))
-        # elif board[piece].type == "Bishop":
+        # elif board.pieces[piece].type == "Bishop":
         #     #moves.extend(possible_bishop_moves(board, piece, to_move))
-        # elif board[piece].type == "Queen":
+        # elif board.pieces[piece].type == "Queen":
         #     #moves.extend(possible_queen_moves(board, piece, to_move))
-        # elif board[piece].type == "King":
+        # elif board.pieces[piece].type == "King":
         #     #moves.extend(possible_king_moves(board, piece, to_move))
     if len(moves) == 0:
         return None
@@ -41,6 +67,8 @@ def possible_moves(board, to_move):
         return moves
     
 def possible_pawn_moves(board, piece, to_move):
+    if piece[0] < 2 or piece[0] > 7:
+        stop = True
     moves = []
     if to_move == "W":
         forward = 1
@@ -48,43 +76,64 @@ def possible_pawn_moves(board, piece, to_move):
         forward = -1
     # One forward
     new_piece = (piece[0] + forward, piece[1])
-    if board[new_piece].type == None:
-        new_board = move(board, piece, new_piece)
-        if new_piece[0] == 4.5 + 3.5*forward:
-            new_board[new_piece].type = "Queen"
-        if not is_check(new_board, to_move):
-            moves.append(new_board)
+    if new_piece in board.pieces and board.pieces[new_piece].type == None:
+        if not check_this_move(board, piece, new_piece):
+            moves.append((piece, new_piece))
     # Two forward
     middle_piece = (piece[0] + forward, piece[1])
     new_piece = (piece[0] + 2*forward, piece[1])
-    if piece[0] == 4.5 - 2.5*forward and board[middle_piece].type == None and board[new_piece].type == None:
-        new_board = move(board, piece, new_piece)
-        if not is_check(new_board, to_move):
-            moves.append(new_board)
+    if piece[0] == 4.5 - 2.5*forward and board.pieces[middle_piece].type == None and board.pieces[new_piece].type == None:
+        if not check_this_move(board, piece, new_piece):
+            moves.append((piece, new_piece))
     # Hit Left (white's perspective)
     if piece[1] > 1:
-        new_piece = board[(piece[0] + forward, piece[1] - 1)]
-        if new_piece.colour != to_move and new_piece.colour != None:
-            new_board = move(board, piece, new_piece)
-            if new_piece[0] == 4.5 + 3.5*forward:
-                new_board[new_piece].type = "Queen"
-            if not is_check(new_board, to_move):
-                moves.append(new_board)
+        new_piece = (piece[0] + forward, piece[1] - 1)
+        if board.pieces[new_piece].colour != to_move and board.pieces[new_piece].colour != None:
+            if board.pieces[new_piece].type == "King":
+                stop =True
+            if not check_this_move(board, piece, new_piece):
+                moves.append((piece, new_piece))
     # Hit Right (white's perspective)
     if piece[1] < 8:
-        new_piece = board[(piece[0] + forward, piece[1] + 1)]
-        if new_piece.colour != to_move and new_piece.colour != None:
-            new_board = move(board, piece, new_piece)
-            if new_piece[0] == 4.5 + 3.5*forward:
-                new_board[new_piece].type = "Queen"
-            if not is_check(new_board, to_move):
-                moves.append(new_board)
+        new_piece = (piece[0] + forward, piece[1] + 1)
+        if board.pieces[new_piece].colour != to_move and board.pieces[new_piece].colour != None:
+            if not check_this_move(board, piece, new_piece):
+                moves.append((piece, new_piece))
+            # if new_piece[0] == 4.5 + 3.5*forward:
+            #     new_board.pieces[new_piece].type = "Queen"
     # TODO: Hit En Passant
     return moves
 
 def possible_rook_moves(board, piece, to_move):
     moves = []
+    directions = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    for direction in directions:
+        while True:
+            to_break = False
+            new_piece = (piece[0] + direction[0], piece[1] + direction[1])
+            if new_piece in board.pieces:
+                if board.pieces[new_piece].colour == None:
+                    if not check_this_move(board, piece, new_piece):
+                        moves.append((piece, new_piece))
+                elif board.pieces[new_piece].colour != to_move:
+                    if board.pieces[new_piece].type == "King":
+                        stop = True
+                    if not check_this_move(board, piece, new_piece):
+                        moves.append((piece, new_piece))
+                    break
+                # Move one square further
+                if direction[0] > 0:
+                    direction[0] += 1
+                elif direction[0] < 0:
+                    direction[0] -= 1
+                if direction[1] > 0:
+                    direction[1] += 1
+                elif direction[1] < 0:
+                    direction[1] -= 1
+            else:
+                break
     return moves
+
 
 def is_check(board, to_move):
     check = False
@@ -120,7 +169,7 @@ def is_check(board, to_move):
     for rook in rooks:
         if king[0] == rook[0]:
             check = True
-            diff = abs(king[1], rook[1])
+            diff = abs(king[1] - rook[1])
             if diff == 1:
                 return True
             smaller = min(king[1], rook[1])
@@ -132,14 +181,13 @@ def is_check(board, to_move):
                 return True
         if king[1] == rook[1]:
             check = True
-            diff = abs(king[0], rook[0])
+            diff = abs(king[0] - rook[0])
             if diff == 1:
                 return True
             smaller = min(king[0], rook[0])
             for i in range(1, diff):
                 if board.pieces[(smaller + i, king[1])].type != None:
-                    check = False
-                    break
+                    return False
             if check == True:
                 return True
 
@@ -172,7 +220,7 @@ def is_check(board, to_move):
         # Rook part
         if king[0] == queen[0]:
             check = True
-            diff = abs(king[1], queen[1])
+            diff = abs(king[1] - queen[1])
             if diff == 1:
                 return True
             smaller = min(king[1], queen[1])
@@ -184,7 +232,7 @@ def is_check(board, to_move):
                 return True
         if king[1] == queen[1]:
             check = True
-            diff = abs(king[0], queen[0])
+            diff = abs(king[0] - queen[0])
             if diff == 1:
                 return True
             smaller = min(king[0], queen[0])
@@ -215,10 +263,3 @@ def is_check(board, to_move):
             if check == True:
                 return True
     return False
-
-
-
-import create_board
-
-board = create_board.initial_board()
-print(is_check(board, "W"))

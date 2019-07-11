@@ -14,22 +14,19 @@ import possible_moves
 import play_functions
 
 
-initial_board = create_board.initial_board()
-to_move = "W"
-play(initial_board, to_move)
-
 
 def play(board, to_move):
     # User input
     while True:
         this_move = input("Enter move for {}!".format(to_move))
         if len(this_move) == 0:
-            board = play_functions.choose_next_move(board, to_move)
+            next_move = play_functions.choose_next_move(board, to_move)
             to_move = play_functions.flip_to_move(to_move)
-            if board == None:
+            if next_move == None:
                 print("Game over, {} won!".format(to_move))
                 return
-            play(board, to_move)
+            new_board = play_functions.make_move(board, next_move[0], next_move[1])
+            play(new_board, to_move)
             break
         try:
             move_from = (this_move[0], this_move[1])
@@ -46,4 +43,9 @@ def play(board, to_move):
             "Invalid input, please try again"
         else:
             to_move = play_functions.flip_to_move(to_move)
-            play(board, to_move)
+            play(new_board, to_move)
+
+
+board = create_board.initial_board()
+to_move = "W"
+play(board, to_move)
