@@ -16,17 +16,21 @@ def flip_to_move(to_move):
         return "W"
 
 def check_this_move(board, move_from, move_to):
-    promotion = False
+    # Promotion check
     if (move_to[0] == 8 or move_to[0] == 1) and board.pieces[move_from].type == "Pawn":
-        board.pieces[move_from].type = "Queen"
         promotion = True
+    else:
+        promotion = False
     # Whose turn it is
     to_move = board.pieces[move_from].colour
     # Temp variables to reverse move
     temp_type = board.pieces[move_to].type
     temp_colour = board.pieces[move_to].colour
     # Make move
-    board.pieces[move_to].type = board.pieces[move_from].type
+    if promotion:
+        board.pieces[move_to].type = "Queen"
+    else:
+        board.pieces[move_to].type = board.pieces[move_from].type
     board.pieces[move_to].colour = board.pieces[move_from].colour
     board.pieces[move_from].type = None
     board.pieces[move_from].colour = None
@@ -67,8 +71,6 @@ def possible_moves(board, to_move):
         return moves
     
 def possible_pawn_moves(board, piece, to_move):
-    if piece[0] < 2 or piece[0] > 7:
-        stop = True
     moves = []
     if to_move == "W":
         forward = 1
@@ -89,8 +91,6 @@ def possible_pawn_moves(board, piece, to_move):
     if piece[1] > 1:
         new_piece = (piece[0] + forward, piece[1] - 1)
         if board.pieces[new_piece].colour != to_move and board.pieces[new_piece].colour != None:
-            if board.pieces[new_piece].type == "King":
-                stop =True
             if not check_this_move(board, piece, new_piece):
                 moves.append((piece, new_piece))
     # Hit Right (white's perspective)
@@ -99,8 +99,6 @@ def possible_pawn_moves(board, piece, to_move):
         if board.pieces[new_piece].colour != to_move and board.pieces[new_piece].colour != None:
             if not check_this_move(board, piece, new_piece):
                 moves.append((piece, new_piece))
-            # if new_piece[0] == 4.5 + 3.5*forward:
-            #     new_board.pieces[new_piece].type = "Queen"
     # TODO: Hit En Passant
     return moves
 
@@ -109,19 +107,25 @@ def possible_rook_moves(board, piece, to_move):
     directions = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     for direction in directions:
         while True:
-            to_break = False
             new_piece = (piece[0] + direction[0], piece[1] + direction[1])
+            # Check that square is within board
             if new_piece in board.pieces:
+                # Check that square is empty
                 if board.pieces[new_piece].colour == None:
+                    # Check that we aren't in check after the move
                     if not check_this_move(board, piece, new_piece):
                         moves.append((piece, new_piece))
+                # Check that we are hitting the opponent
                 elif board.pieces[new_piece].colour != to_move:
-                    if board.pieces[new_piece].type == "King":
-                        stop = True
+                    # Check that we aren't in check after the move
                     if not check_this_move(board, piece, new_piece):
                         moves.append((piece, new_piece))
+                    # We encountered a piece so we can't move any further in this direction, break
                     break
-                # Move one square further
+                # We would be hitting our own piece, so we break
+                else:
+                    break
+                # Move one square further in the current direction
                 if direction[0] > 0:
                     direction[0] += 1
                 elif direction[0] < 0:
@@ -130,12 +134,71 @@ def possible_rook_moves(board, piece, to_move):
                     direction[1] += 1
                 elif direction[1] < 0:
                     direction[1] -= 1
+            # We got out of bounds, so we break
             else:
                 break
     return moves
 
-
 def is_check(board, to_move):
+    # TODO: track/query king's position
+    # TODO: king cannot move next to other king
+    if to_move == "W":
+        forward = 1
+        king = (1,5)
+    else:
+        forward = -1
+        king = (8,5)
+    # Pawns
+    p1 = (king[0] + forward, king[1] + 1)
+    p2 = (king[0] + forward, king[1] - 1)
+    if p1 in board.pieces and board.pieces[p1].type == "Pawn" and board.pieces[p1].colour == flip_to_move(to_move):
+        return True
+    if p2 in board.pieces and board.pieces[p2].type == "Pawn" and board.pieces[p2].colour == flip_to_move(to_move):
+        return True
+    # Knights
+    knights = [ (king[0]-2, king[1]-1), (king[0]-2, king[1]+1), (king[0]-1, king[1]-2), (king[0]-1, king[1]+2), (king[0]+1, king[1]-2), (king[0]+1, king[1]+2), (king[0]+2, king[1]-1), (king[0]+2, king[1]+1) ]
+    for knight in knights:
+        if knight in board.pieces and board.pieces[knight].type == "Knight" and board.pieces[knight].colour == flip_to_move(to_move):
+            return True
+    # Rooks (and Queens)
+    directions = [ [1,0], [0,1], [-1,0], [0,-1] ]
+    for direction in directions:
+        while True:
+            square = (king[0] + direction[0], king[1] + direction[1])
+            if square not in board.pieces or board.pieces[square].colour == to_move:
+                break
+            if board.pieces[square].colour == flip_to_move(to_move):
+                if board.pieces[square].type == "Rook" or board.pieces[square].type == "Queen":
+                    return True
+                else:
+                    break
+            elif board.pieces[square].colour == None:
+                if direction[0] > 0: direction[0] += 1
+                elif direction[0] < 0: direction[0] -= 1
+                if direction[1] > 0: direction[1] += 1
+                elif direction[1] < 0: direction[1] -= 1
+    # Bishops (and Queens)
+    directions = [ [1,1], [1,-1], [-1,1], [-1,-1] ]
+    for direction in directions:
+        while True:
+            square = (king[0] + direction[0], king[1] + direction[1])
+            if square not in board.pieces or board.pieces[square].colour == to_move:
+                break
+            if board.pieces[square].colour == flip_to_move(to_move):
+                if board.pieces[square].type == "Bishop" or board.pieces[square].type == "Queen":
+                    return True
+                else:
+                    break
+            elif board.pieces[square].colour == None:
+                if direction[0] > 0: direction[0] += 1
+                elif direction[0] < 0: direction[0] -= 1
+                if direction[1] > 0: direction[1] += 1
+                elif direction[1] < 0: direction[1] -= 1
+    return False
+
+
+# Old check function, slow, won't use
+def is_check2(board, to_move):
     check = False
     if to_move == "W":
         forward = 1
@@ -167,28 +230,29 @@ def is_check(board, to_move):
             return True
 
     for rook in rooks:
+        # Same row
         if king[0] == rook[0]:
-            check = True
             diff = abs(king[1] - rook[1])
-            if diff == 1:
-                return True
             smaller = min(king[1], rook[1])
+            # For each square in between, check if occupied. If none are, return True.
+            rook_check = True
             for i in range(1, diff):
                 if board.pieces[(king[0], smaller + i)].type != None:
-                    check = False
+                    rook_check = False
                     break
-            if check == True:
+            if rook_check:
                 return True
+        # Same column
         if king[1] == rook[1]:
-            check = True
             diff = abs(king[0] - rook[0])
-            if diff == 1:
-                return True
             smaller = min(king[0], rook[0])
+            # For each square in between, check if occupied. If none are, return True.
+            rook_check = True
             for i in range(1, diff):
                 if board.pieces[(smaller + i, king[1])].type != None:
-                    return False
-            if check == True:
+                    rook_check = False
+                    break
+            if rook_check:
                 return True
 
     for knight in knights:

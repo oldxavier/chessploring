@@ -14,7 +14,6 @@ import possible_moves
 import play_functions
 
 
-
 def play(board, to_move):
     # User input
     while True:
@@ -25,7 +24,9 @@ def play(board, to_move):
             if next_move == None:
                 print("Game over, {} won!".format(to_move))
                 return
+            # TODO: maybe we don't need a deep copy!
             new_board = play_functions.make_move(board, next_move[0], next_move[1])
+            # return  # this line is only for profiling
             play(new_board, to_move)
             break
         try:
@@ -49,3 +50,16 @@ def play(board, to_move):
 board = create_board.initial_board()
 to_move = "W"
 play(board, to_move)
+
+
+
+# import cProfile, pstats, io
+# pr = cProfile.Profile()
+# pr.enable()
+# play(board, to_move)
+# pr.disable()
+# s = io.StringIO()
+# sortby = 'cumulative'
+# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+# ps.print_stats()
+# print(s.getvalue())
