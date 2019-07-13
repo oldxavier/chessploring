@@ -57,8 +57,8 @@ def possible_moves(board, to_move):
             moves.extend(possible_pawn_moves(board, piece, to_move))
         elif board.pieces[piece].type == "Rook":
             moves.extend(possible_rook_moves(board, piece, to_move))
-        # elif board.pieces[piece].type == "Knight":
-        #     #moves.extend(possible_knight_moves(board, piece, to_move))
+        elif board.pieces[piece].type == "Knight":
+            moves.extend(possible_knight_moves(board, piece, to_move))
         # elif board.pieces[piece].type == "Bishop":
         #     #moves.extend(possible_bishop_moves(board, piece, to_move))
         # elif board.pieces[piece].type == "Queen":
@@ -138,6 +138,18 @@ def possible_rook_moves(board, piece, to_move):
             else:
                 break
     return moves
+
+def possible_knight_moves(board, piece, to_move):
+    moves = []
+    knights = [ (piece[0]-2, piece[1]-1), (piece[0]-2, piece[1]+1), 
+                (piece[0]-1, piece[1]-2), (piece[0]-1, piece[1]+2), 
+                (piece[0]+1, piece[1]-2), (piece[0]+1, piece[1]+2), 
+                (piece[0]+2, piece[1]-1), (piece[0]+2, piece[1]+1) ]
+    for knight in knights:
+        if knight in board.pieces and board.pieces[knight].colour != to_move and not check_this_move(board, piece, knight):
+            moves.append((piece, knight))
+    return moves
+
 
 def is_check(board, to_move):
     # TODO: track/query king's position
