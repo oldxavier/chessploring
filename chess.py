@@ -28,7 +28,7 @@ def play(board):
                 return
             # TODO: maybe we don't need a deep copy!
             new_board = play_functions.make_move(board, next_move[0], next_move[1])
-            return  # this line is only for profiling
+            # return  # this line is only for profiling
             play(new_board)
             break
         try:
@@ -50,17 +50,17 @@ def play(board):
 
 
 board = create_board.initial_board()
-# play(board)
-
-
-
-import cProfile, pstats, io
-pr = cProfile.Profile()
-pr.enable()
 play(board)
-pr.disable()
-s = io.StringIO()
-sortby = 'cumulative'
-ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-ps.print_stats()
-print(s.getvalue())
+
+
+
+# import cProfile, pstats, io
+# pr = cProfile.Profile()
+# pr.enable()
+# play(board)
+# pr.disable()
+# s = io.StringIO()
+# sortby = 'cumulative'
+# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+# ps.print_stats()
+# print(s.getvalue())
