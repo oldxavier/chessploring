@@ -16,52 +16,51 @@ import sys
 sys.setrecursionlimit(10000)
 
 
-def play(board, to_move):
+def play(board):
     # User input
     while True:
-        this_move = [] # input("Enter move for {}!".format(to_move))
+        this_move = input("Enter move for {}!".format(board.turn))
         if len(this_move) == 0:
-            next_move = play_functions.choose_next_move(board, to_move)
-            to_move = play_functions.flip_to_move(to_move)
+            next_move = play_functions.choose_next_move(board)
+            board.turn = board.turn * -1
             if next_move == None:
-                print("Game over, {} won!".format(to_move))
+                print("Game over, {} won!".format(board.turn))
                 return
             # TODO: maybe we don't need a deep copy!
             new_board = play_functions.make_move(board, next_move[0], next_move[1])
-            # return  # this line is only for profiling
-            play(new_board, to_move)
+            return  # this line is only for profiling
+            play(new_board)
             break
         try:
-            move_from = (this_move[0], this_move[1])
-            move_to = (this_move[2], this_move[3])
-            new_board = play_functions.move(board, move_from, move_to)
-            if possible_moves.is_check(new_board, to_move):
-                if possible_moves.possible_moves(board, to_move) == None:
-                    to_move = play_functions.flip_to_move(to_move)
-                    print("Game over, {} won!".format(to_move))
-                    break
+            move_from = (int(this_move[0]), int(this_move[1]))
+            move_to = (int(this_move[2]), int(this_move[3]))
+            new_board = play_functions.make_move(board, move_from, move_to)
+            if possible_moves.is_check(new_board):
+                if possible_moves.possible_moves(board) == None:
+                    board.turn = board.turn * -1
+                    print("Game over, {} won!".format(board.turn))
+                    return
                 print("Can't leave king in check, try again!")
                 continue
         except:
-            "Invalid input, please try again"
+            print("Invalid input, please try again")
         else:
-            to_move = play_functions.flip_to_move(to_move)
-            play(new_board, to_move)
+            new_board.turn = new_board.turn * -1
+            play(new_board)
 
 
 board = create_board.initial_board()
-to_move = "W"
-play(board, to_move)
+# play(board)
 
 
 
-# import cProfile, pstats, io
-# pr = cProfile.Profile()
-# pr.enable()
-# play(board, to_move)
-# pr.disable()
-# s = io.StringIO()
-# sortby = 'cumulative'
-# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-# ps.print_stats()
-# print(s.getvalue())
+import cProfile, pstats, io
+pr = cProfile.Profile()
+pr.enable()
+play(board)
+pr.disable()
+s = io.StringIO()
+sortby = 'cumulative'
+ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+ps.print_stats()
+print(s.getvalue())

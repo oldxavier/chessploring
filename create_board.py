@@ -4,8 +4,11 @@ class Piece:
         self.colour = this_colour
 
 class Board():
-    def __init__(self, pieces, castle, en_passant):
+    def __init__(self, pieces, turn, white_k, black_k, castle, en_passant):
         self.pieces = pieces
+        self.turn = turn
+        self.white_k = white_k
+        self.black_k = black_k
         self.castle = castle
         self.en_passant = en_passant
 
@@ -19,9 +22,9 @@ def initial_board():
         if piece[0] > 2 and piece[0] < 7:
             continue
         elif piece[0] < 3:
-            pieces[piece].colour = "W"
+            pieces[piece].colour = 1
         else:
-            pieces[piece].colour = "B"
+            pieces[piece].colour = -1
     # Types
     for piece in pieces:
         if piece[0] > 2 and piece[0] < 7:
@@ -39,7 +42,10 @@ def initial_board():
         elif piece[1] == 5:
             pieces[piece].type = "King"
     # Create board
+    turn = 1 # White
     castle = [True, True, True, True]
     en_passant = True
-    initial_board = Board(pieces, castle, en_passant)
+    white_k = (1,5)
+    black_k = (8,5)
+    initial_board = Board(pieces, turn, white_k, black_k, castle, en_passant)
     return initial_board
