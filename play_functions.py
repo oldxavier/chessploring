@@ -21,7 +21,7 @@ def make_move(board, move_from, move_to):
     return new_board
 
 def choose_next_move(board, to_move):
-    no_of_searches = 10
+    no_of_searches = 4
     no_of_wins = 0
     moves = possible_moves.possible_moves(board, to_move)
     best_move = None

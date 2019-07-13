@@ -49,8 +49,11 @@ def check_this_move(board, move_from, move_to):
 
 
 def possible_moves(board, to_move):
+    count = 0
     moves = []
     for piece in board.pieces:
+        if board.pieces[piece].type != None:
+            count += 1
         if board.pieces[piece].colour != to_move:
             continue
         if board.pieces[piece].type == "Pawn":
@@ -59,13 +62,14 @@ def possible_moves(board, to_move):
             moves.extend(possible_rook_moves(board, piece, to_move))
         elif board.pieces[piece].type == "Knight":
             moves.extend(possible_knight_moves(board, piece, to_move))
-        # elif board.pieces[piece].type == "Bishop":
-        #     #moves.extend(possible_bishop_moves(board, piece, to_move))
-        # elif board.pieces[piece].type == "Queen":
-        #     #moves.extend(possible_queen_moves(board, piece, to_move))
-        # elif board.pieces[piece].type == "King":
-        #     #moves.extend(possible_king_moves(board, piece, to_move))
-    if len(moves) == 0:
+        elif board.pieces[piece].type == "Bishop":
+            moves.extend(possible_bishop_moves(board, piece, to_move))
+        elif board.pieces[piece].type == "Queen":
+            moves.extend(possible_rook_moves(board, piece, to_move))
+            moves.extend(possible_bishop_moves(board, piece, to_move))
+        elif board.pieces[piece].type == "King":
+            moves.extend(possible_king_moves(board, piece, to_move))
+    if len(moves) == 0 or count < 5:
         return None
     else:
         return moves
@@ -141,25 +145,50 @@ def possible_rook_moves(board, piece, to_move):
 
 def possible_knight_moves(board, piece, to_move):
     moves = []
-    knights = [ (piece[0]-2, piece[1]-1), (piece[0]-2, piece[1]+1), 
+    squares = [ (piece[0]-2, piece[1]-1), (piece[0]-2, piece[1]+1), 
                 (piece[0]-1, piece[1]-2), (piece[0]-1, piece[1]+2), 
                 (piece[0]+1, piece[1]-2), (piece[0]+1, piece[1]+2), 
                 (piece[0]+2, piece[1]-1), (piece[0]+2, piece[1]+1) ]
-    for knight in knights:
-        if knight in board.pieces and board.pieces[knight].colour != to_move and not check_this_move(board, piece, knight):
-            moves.append((piece, knight))
+    for square in squares:
+        if square in board.pieces and board.pieces[square].colour != to_move and not check_this_move(board, piece, square):
+            moves.append((piece, square))
     return moves
 
+def possible_bishop_moves(board, piece, to_move):
+    moves = []
+    directions = [ [1,1], [1,-1], [-1,1], [-1,-1] ]
+    for direction in directions:
+        while True:
+            square = (piece[0] + direction[0], piece[1] + direction[1])
+            if square not in board.pieces or board.pieces[square].colour == to_move:
+                break
+            if not check_this_move(board, piece, square):
+                moves.append((piece, square))
+            if board.pieces[square].colour == flip_to_move(to_move):
+                break
+            if direction[0] > 0: direction[0] += 1
+            elif direction[0] < 0: direction[0] -= 1
+            if direction[1] > 0: direction[1] += 1
+            elif direction[1] < 0: direction[1] -= 1
+    return moves
+
+def possible_king_moves(board, piece, to_move):
+    moves = []
+    directions = [ [1,1], [1,0], [1,-1], [0,1], [0,-1], [-1,1], [-1,0], [-1,-1] ]
+    for direction in directions:
+        square = (piece[0] + direction[0], piece[1] + direction[1])
+        if square in board.pieces and board.pieces[square].colour != to_move and not check_this_move(board, piece, square):
+            moves.append((piece, square))
+    return moves
 
 def is_check(board, to_move):
+    [king] = [x for x in board.pieces if board.pieces[x].type == "King" and board.pieces[x].colour == to_move]
     # TODO: track/query king's position
     # TODO: king cannot move next to other king
     if to_move == "W":
         forward = 1
-        king = (1,5)
     else:
         forward = -1
-        king = (8,5)
     # Pawns
     p1 = (king[0] + forward, king[1] + 1)
     p2 = (king[0] + forward, king[1] - 1)
@@ -180,7 +209,7 @@ def is_check(board, to_move):
             if square not in board.pieces or board.pieces[square].colour == to_move:
                 break
             if board.pieces[square].colour == flip_to_move(to_move):
-                if board.pieces[square].type == "Rook" or board.pieces[square].type == "Queen":
+                if board.pieces[square].type == "Rook" or board.pieces[square].type == "Queen" or board.pieces[square].type == "King":
                     return True
                 else:
                     break
@@ -197,7 +226,7 @@ def is_check(board, to_move):
             if square not in board.pieces or board.pieces[square].colour == to_move:
                 break
             if board.pieces[square].colour == flip_to_move(to_move):
-                if board.pieces[square].type == "Bishop" or board.pieces[square].type == "Queen":
+                if board.pieces[square].type == "Bishop" or board.pieces[square].type == "Queen" or board.pieces[square].type == "King":
                     return True
                 else:
                     break
