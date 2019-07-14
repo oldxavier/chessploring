@@ -44,7 +44,8 @@ def initial_board():
     # Create board
     turn = 1 # White
     castle = [True, True, True, True]
-    en_passant = True
+    # None will be the square where the pawn moved that enabled en passant, False flags to True if an en passant move is being checked
+    en_passant = [None, False]
     white_k = (1,5)
     black_k = (8,5)
     initial_board = Board(pieces, turn, white_k, black_k, castle, en_passant)

@@ -9,52 +9,6 @@
 import copy
 
 
-def check_this_move(board, move_from, move_to):
-    # Promotion check
-    if (move_to[0] == 8 or move_to[0] == 1) and board.pieces[move_from].type == "Pawn":
-        promotion = True
-    else:
-        promotion = False
-    # King move check
-    if board.pieces[move_from].type == "King":
-        kingmove = True
-    else:
-        kingmove = False
-    # Temp variables to reverse move
-    temp_type = board.pieces[move_to].type
-    temp_colour = board.pieces[move_to].colour
-    # Make move
-    if promotion:
-        board.pieces[move_to].type = "Queen"
-    else:
-        board.pieces[move_to].type = board.pieces[move_from].type
-    board.pieces[move_to].colour = board.pieces[move_from].colour
-    board.pieces[move_from].type = None
-    board.pieces[move_from].colour = None
-    if kingmove:
-        if board.turn == 1:
-            board.white_k = move_to
-        else:
-            board.black_k = move_to
-    # Check or not
-    check = is_check(board)
-    # Reverse move
-    if promotion:
-        board.pieces[move_from].type = "Pawn"
-    else:
-        board.pieces[move_from].type = board.pieces[move_to].type
-    board.pieces[move_from].colour = board.pieces[move_to].colour
-    board.pieces[move_to].type = temp_type
-    board.pieces[move_to].colour = temp_colour
-    if kingmove:
-        if board.turn == 1:
-            board.white_k = move_from
-        else:
-            board.black_k = move_from
-    # Return boolean
-    return check
-
-
 def possible_moves(board):
     count = 0
     moves = []
@@ -80,7 +34,8 @@ def possible_moves(board):
         return None
     else:
         return moves
-    
+
+
 def possible_pawn_moves(board, piece):
     moves = []
     forward = board.turn
@@ -107,8 +62,15 @@ def possible_pawn_moves(board, piece):
         if board.pieces[new_piece].colour != board.turn and board.pieces[new_piece].colour != None:
             if not check_this_move(board, piece, new_piece):
                 moves.append((piece, new_piece))
-    # TODO: Hit En Passant
+    # Hit En Passant
+    if board.en_passant[0] != None:
+        if board.en_passant[0][0] == piece[0] and abs(board.en_passant[0][1] - piece[1]) == 1:
+            board.en_passant[1] = True
+            new_piece = (board.en_passant[0][0] + forward, board.en_passant[0][1])
+            if not check_this_move(board, piece, new_piece):
+                moves.append((piece, new_piece))
     return moves
+
 
 def possible_rook_moves(board, piece):
     moves = []
@@ -147,6 +109,7 @@ def possible_rook_moves(board, piece):
                 break
     return moves
 
+
 def possible_knight_moves(board, piece):
     moves = []
     squares = [ (piece[0]-2, piece[1]-1), (piece[0]-2, piece[1]+1), 
@@ -157,6 +120,7 @@ def possible_knight_moves(board, piece):
         if square in board.pieces and board.pieces[square].colour != board.turn and not check_this_move(board, piece, square):
             moves.append((piece, square))
     return moves
+
 
 def possible_bishop_moves(board, piece):
     moves = []
@@ -176,6 +140,7 @@ def possible_bishop_moves(board, piece):
             elif direction[1] < 0: direction[1] -= 1
     return moves
 
+
 def possible_king_moves(board, piece):
     moves = []
     directions = [ [1,1], [1,0], [1,-1], [0,1], [0,-1], [-1,1], [-1,0], [-1,-1] ]
@@ -183,7 +148,158 @@ def possible_king_moves(board, piece):
         square = (piece[0] + direction[0], piece[1] + direction[1])
         if square in board.pieces and board.pieces[square].colour != board.turn and not check_this_move(board, piece, square):
             moves.append((piece, square))
+    # TODO: Castle
     return moves
+
+
+def check_this_move(board, move_from, move_to):
+    # En passant check
+    if board.en_passant[1] == True:
+        return check_en_passant_move(board, move_from, move_to)
+    # Promotion check
+    if (move_to[0] == 8 or move_to[0] == 1) and board.pieces[move_from].type == "Pawn":
+        return check_promotion_move(board, move_from, move_to)
+    # King move check
+    if board.pieces[move_from].type == "King":
+        # Castle check
+        if abs(move_to[1] - move_from[1]) == 2:
+            return check_castle_move(board, move_from, move_to)
+        # Normal king move
+        else:
+            return check_king_move(board, move_from, move_to)
+    # Temp variables to reverse move
+    temp_type = board.pieces[move_to].type
+    temp_colour = board.pieces[move_to].colour
+    # Make move
+    board.pieces[move_to].type = board.pieces[move_from].type
+    board.pieces[move_to].colour = board.pieces[move_from].colour
+    board.pieces[move_from].type = None
+    board.pieces[move_from].colour = None
+    # Is it in check?
+    check = is_check(board)
+    # Undo move
+    board.pieces[move_from].type = board.pieces[move_to].type
+    board.pieces[move_from].colour = board.pieces[move_to].colour
+    board.pieces[move_to].type = temp_type
+    board.pieces[move_to].colour = temp_colour
+    return check
+
+
+def check_king_move(board, move_from, move_to):
+    temp_type = board.pieces[move_to].type
+    temp_colour = board.pieces[move_to].colour
+    # Make move
+    board.pieces[move_to].type = "King"
+    board.pieces[move_to].colour = board.turn
+    board.pieces[move_from].type = None
+    board.pieces[move_from].colour = None
+    if board.turn == 1:
+        board.white_k = move_to
+    else:
+        board.black_k = move_to
+    # Is it in check?
+    check = is_check(board)
+    # Undo move
+    board.pieces[move_to].type = temp_type
+    board.pieces[move_to].colour = temp_colour
+    board.pieces[move_from].type = "King"
+    board.pieces[move_from].colour = board.turn
+    if board.turn == 1:
+        board.white_k = move_from
+    else:
+        board.black_k = move_from
+    return check
+
+
+def check_castle_move(board, move_from, move_to):
+    if move_to[1] == 7:
+        old_rook = (move_from[0], 8)
+        new_rook = (move_from[0], 6)
+    else:
+        old_rook = (move_from[0], 1)
+        new_rook = (move_from[0], 4)
+    mid_king = (move_from[0], (move_to + move_from) / 2)
+    # Initial check
+    check1 = is_check(board)
+    # Midway check
+    board.pieces[mid_king].type = "King"
+    board.pieces[mid_king].colour = board.turn
+    board.pieces[move_from].type = None
+    board.pieces[move_from].colour = None
+    if board.turn == 1:
+        board.white_k = mid_king
+    else:
+        board.black_k = mid_king
+    check2 = is_check(board)
+    # Final check
+    board.pieces[move_to].type = "King"
+    board.pieces[move_to].colour = board.turn
+    board.pieces[mid_king].type = None
+    board.pieces[mid_king].colour = None
+    if board.turn == 1:
+        board.white_k = move_to
+    else:
+        board.black_k = move_to
+    board.pieces[new_rook].type = "Rook"
+    board.pieces[new_rook].colour = board.turn
+    board.pieces[old_rook].type = None
+    board.pieces[old_rook].colour = None
+    check3 = is_check(board)
+    # Undo move
+    board.pieces[move_to].type = None
+    board.pieces[move_to].colour = None
+    board.pieces[move_from].type = "King"
+    board.pieces[move_from].colour = board.turn
+    if board.turn == 1:
+        board.white_k = move_from
+    else:
+        board.black_k = move_from
+    board.pieces[new_rook].type = None
+    board.pieces[new_rook].colour = None
+    board.pieces[old_rook].type = "Rook"
+    board.pieces[old_rook].colour = board.turn
+    return (check1 or check2 or check3)
+
+
+def check_promotion_move(board, move_from, move_to):
+    temp_type = board.pieces[move_to].type
+    temp_colour = board.pieces[move_to].colour
+    # Make move
+    board.pieces[move_to].type = "Queen"
+    board.pieces[move_to].colour = board.turn
+    board.pieces[move_from].type = None
+    board.pieces[move_from].colour = None
+    # Is it in check?
+    check = is_check(board)
+    # Undo move
+    board.pieces[move_to].type = temp_type
+    board.pieces[move_to].colour = temp_colour
+    board.pieces[move_from].type = "Pawn"
+    board.pieces[move_from].colour = board.turn
+    return check
+
+
+def check_en_passant_move(board, move_from, move_to):
+    board.en_passant[1] = False
+    opponent_pawn = (move_to[0] - board.turn, move_to[1])
+    # Make move
+    board.pieces[move_to].type = "Pawn"
+    board.pieces[move_to].colour = board.turn
+    board.pieces[move_from].type = None
+    board.pieces[move_from].colour = None
+    board.pieces[opponent_pawn].type = None
+    board.pieces[opponent_pawn].colour = None
+    # Is it in check?
+    check = is_check(board)
+    # Undo move
+    board.pieces[move_to].type = None
+    board.pieces[move_to].colour = None
+    board.pieces[move_from].type = "Pawn"
+    board.pieces[move_from].colour = board.turn
+    board.pieces[opponent_pawn].type = "Pawn"
+    board.pieces[opponent_pawn].colour = board.turn * -1
+    return check
+
 
 def is_check(board):
     forward = board.turn
