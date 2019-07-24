@@ -15,20 +15,35 @@ import play_functions
 import sys
 sys.setrecursionlimit(10000)
 
+result = 0
+no_of_matches = 0
 
+# Function below currently modified for automatic play broken by the return in line 46 for profiling purposes
 def play(board):
     # User input
     while True:
-        this_move = input("Enter move for {}!".format(board.turn))
+        this_move = [] # input("Enter move for {}!".format(board.turn))
         if len(this_move) == 0:
-            next_move = play_functions.choose_next_move(board)
-            board.turn = board.turn * -1
+            if board.turn == 1:
+                next_move = play_functions.choose_next_move2(board)
+            else:
+                next_move = play_functions.test_random_move(board)
             if next_move == None:
-                print("Game over, {} won!".format(board.turn))
-                return
+                global result
+                global no_of_matches
+                result += board.turn * -1
+                no_of_matches += 1
+                print("Game over, {} won. Score is: {}/{}".format(board.turn * -1, result, no_of_matches))
+                board = create_board.initial_board()
+                if no_of_matches == 10:
+                    return
+                play(board)
             # TODO: maybe we don't need a deep copy!
+            if next_move == None:
+                return
             new_board = play_functions.make_move(board, next_move[0], next_move[1])
-            # return  # this line is only for profiling
+            new_board.turn = new_board.turn * -1
+            return  # this line is only for profiling
             play(new_board)
             break
         try:
@@ -49,10 +64,9 @@ def play(board):
             play(new_board)
 
 
+
 board = create_board.initial_board()
 # play(board)
-
-
 
 import cProfile, pstats, io
 pr = cProfile.Profile()
