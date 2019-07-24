@@ -331,7 +331,7 @@ def is_check(board):
             if square not in board.pieces or board.pieces[square].colour == board.turn:
                 break
             if board.pieces[square].colour == board.turn * -1:
-                if board.pieces[square].type == "Rook" or board.pieces[square].type == "Queen" or board.pieces[square].type == "King":
+                if board.pieces[square].type == "Rook" or board.pieces[square].type == "Queen":
                     return True
                 else:
                     break
@@ -348,7 +348,7 @@ def is_check(board):
             if square not in board.pieces or board.pieces[square].colour == board.turn:
                 break
             if board.pieces[square].colour == board.turn * -1:
-                if board.pieces[square].type == "Bishop" or board.pieces[square].type == "Queen" or board.pieces[square].type == "King":
+                if board.pieces[square].type == "Bishop" or board.pieces[square].type == "Queen":
                     return True
                 else:
                     break
@@ -357,4 +357,12 @@ def is_check(board):
                 elif direction[0] < 0: direction[0] -= 1
                 if direction[1] > 0: direction[1] += 1
                 elif direction[1] < 0: direction[1] -= 1
+    # Kings
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            if i == 0 and j == 0:
+                continue
+            square = (king[0] + i, king[1] + j)
+            if square in board.pieces and board.pieces[square].colour == board.turn * -1 and board.pieces[square].type == "King":
+                return True
     return False
